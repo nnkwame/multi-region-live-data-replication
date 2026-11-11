@@ -1,0 +1,94 @@
+# Local credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.template
+!.env.*.template
+/.aws/
+/.azure/
+/.kube/
+/.codex/
+*.pem
+*.key
+*.p12
+*.pfx
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+
+# Terraform runtime state and local overrides; commit .terraform.lock.hcl
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.example.tfvars
+!*.example.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+crash.log
+crash.*.log
+
+# Dependencies and language/tool caches; commit dependency lockfiles
+node_modules/
+vendor/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+.phpunit.cache/
+.phpunit.result.cache
+.phpactor.json
+
+# Build output
+/build/
+/dist/
+*.egg-info/
+
+# Local database snapshots, persistent volumes, and generated run evidence
+# Keep fixture sources, scenario scripts, dashboards, and sanitized samples tracked.
+/backups/
+/snapshots/
+/volumes/
+/data/
+/runtime/
+/tmp/
+/artifacts/raw/
+/artifacts/runs/
+/artifacts/baselines/
+/compose/data/
+/compose/volumes/
+*.log
+*.log.*
+*.pid
+*.pid.lock
+
+# Bagisto runtime files, if application source is later vendored here
+**/storage/*.key
+**/storage/logs/*
+**/storage/framework/cache/*
+**/storage/framework/sessions/*
+**/storage/framework/views/*
+**/bootstrap/cache/*.php
+
+# Editor and operating-system files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
