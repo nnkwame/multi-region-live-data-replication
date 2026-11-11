@@ -1,0 +1,20 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: store-b
+
+resources:
+  - ../../../bagisto/app
+  - ../../../bagisto/secrets
+  - ../ns
+
+patches:
+  - target:
+      kind: Service
+      name: bagisto
+    patch: |-
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30081
+

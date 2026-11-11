@@ -1,0 +1,97 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb
+spec:
+  serviceName: mariadb
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: mariadb
+
+  template:
+    metadata:
+      labels:
+        app: mariadb
+
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:10.11.19
+
+          ports:
+            - containerPort: 3306
+
+          env:
+            - name: MARIADB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: database
+
+            - name: MARIADB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: dbusername
+
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: dbpassword
+
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: dbrootpassword
+
+          volumeMounts:
+            - name: mariadb-data
+              mountPath: /var/lib/mysql
+
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mariadb-admin ping -h 127.0.0.1 -u root -p"$MARIADB_ROOT_PASSWORD"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mariadb-admin ping -h 127.0.0.1 -u root -p"$MARIADB_ROOT_PASSWORD"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+  volumeClaimTemplates:
+    - metadata:
+        name: mariadb-data
+
+      spec:
+        accessModes:
+          - ReadWriteOnce
+
+        resources:
+          requests:
+            storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+spec:
+  type: NodePort
+  selector:
+    app: mariadb
+  ports:
+    - port: 3306
+      targetPort: 3306
+      nodePort: 30306

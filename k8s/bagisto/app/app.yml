@@ -1,0 +1,113 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bagisto
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bagisto
+  template:
+    metadata:
+      labels:
+        app: bagisto
+    spec:
+      initContainers:
+        - name: composer-install
+          image: webkul/bagisto:2.4.13-nginx-mariadb
+
+
+          workingDir: /var/www/bagisto
+
+          command:
+           - sh
+           - -c
+           - |
+             composer install \
+               --no-interaction \
+               --no-dev \
+               --prefer-dist \
+               --optimize-autoloader
+
+          volumeMounts:
+            - name: composer-files
+              mountPath: /var/www/bagisto/composer.json
+              subPath: composer.json
+
+            - name: composer-files
+              mountPath: /var/www/bagisto/composer.lock
+              subPath: composer.lock
+
+            - name: vendor
+              mountPath: /var/www/bagisto/vendor
+
+      containers:
+        - name: bagisto
+          image: webkul/bagisto:2.4.13-nginx-mariadb
+          
+          env:
+            - name: DB_CONNECTION
+              value: "mariadb"
+            #- name: DB_HOST
+            #  value: mariadb
+            - name: DB_PORT
+              value: "3306" 
+            #- name: APP_URL
+            #  value: https://your-domain.com
+            - name: APP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: appkey
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: database
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: dbusername
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: dbpassword
+
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: composer-files
+              mountPath: /var/www/bagisto/composer.json
+              subPath: composer.json
+
+            - name: composer-files
+              mountPath: /var/www/bagisto/composer.lock
+              subPath: composer.lock
+
+            - name: vendor
+              mountPath: /var/www/bagisto/vendor
+
+      volumes:
+        - name: composer-files
+          configMap:
+            name: bagisto-composer
+            defaultMode: 0755
+        - name: vendor
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bagisto
+spec:
+  type: NodePort
+  selector:
+    app: bagisto
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+
