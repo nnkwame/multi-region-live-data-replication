@@ -13,6 +13,26 @@ spec:
       labels:
         app: bagisto
     spec:
+      # Stateless tier: tolerate the spot taint (dedicated=spot:NoSchedule)
+      # and prefer spot (workload-type=stateless) nodes. `preferred` not
+      # `required`: if spot capacity is gone, pods fall back to the on-demand
+      # group instead of hanging. Stateful workloads (mariadb, kafka, connect,
+      # monitoring) deliberately have NO toleration and stay on on-demand.
+      tolerations:
+        - key: dedicated
+          operator: Equal
+          value: spot
+          effect: NoSchedule
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 10
+              preference:
+                matchExpressions:
+                  - key: workload-type
+                    operator: In
+                    values:
+                      - stateless
       initContainers:
         - name: initialize-media
           image: webkul/bagisto:2.4.13-nginx-mariadb

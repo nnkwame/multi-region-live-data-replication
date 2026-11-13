@@ -1,0 +1,13 @@
+---
+# Cloud monitoring for the data-replication cluster: stock Grafana + its
+# ingress. The local variant lives in ./local (standalone Prometheus,
+# provisioned dashboards). The Prometheus Operator-based prometheus.yml in
+# this directory is kept as WIP and intentionally not listed here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: data-replication
+
+resources:
+  - grafana.yml
+  - ingress.yml

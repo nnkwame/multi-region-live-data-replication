@@ -8,6 +8,7 @@ resources:
   - ../../../bagisto/app
   - ../../../bagisto/secrets
   - ../ns
+  - ingress.yml
 
 patches:
   - target:
@@ -18,12 +19,15 @@ patches:
         path: /spec/template/spec/containers/0/env/-
         value:
           name: APP_URL
-          value: http://localhost:8080
+          value: http://kwames-store-a.ironlabs.online
+  # Cloud: the nginx ingress controller fronts the app, so the Service does
+  # not need a NodePort (base stays NodePort for the local/minikube clusters).
   - target:
       kind: Service
       name: bagisto
     patch: |-
       - op: add
+        path: /spec/type
+        value: ClusterIP
+      - op: remove
         path: /spec/ports/0/nodePort
-        value: 30080
-
