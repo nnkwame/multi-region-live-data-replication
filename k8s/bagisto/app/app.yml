@@ -188,11 +188,13 @@ kind: Service
 metadata:
   name: bagisto
 spec:
-  type: NodePort
+  # ClusterIP: reached through the nginx ingress (cloud) or
+  # `minikube service` / `kubectl port-forward` (local). The overlay's
+  # ingress (overlays/<a|b>/bagisto_app/ingress.yml) routes the public hosts.
+  type: ClusterIP
   selector:
     app: bagisto
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30080
 

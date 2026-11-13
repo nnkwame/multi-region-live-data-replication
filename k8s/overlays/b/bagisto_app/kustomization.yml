@@ -20,14 +20,5 @@ patches:
         value:
           name: APP_URL
           value: http://kwames-store-b.ironlabs.online
-  # Cloud: the nginx ingress controller fronts the app, so the Service does
-  # not need a NodePort (base stays NodePort for the local/minikube clusters).
-  - target:
-      kind: Service
-      name: bagisto
-    patch: |-
-      - op: add
-        path: /spec/type
-        value: ClusterIP
-      - op: remove
-        path: /spec/ports/0/nodePort
+  # Cloud: the base Service is ClusterIP; the nginx ingress controller fronts
+  # the app (see ingress.yml in this overlay).

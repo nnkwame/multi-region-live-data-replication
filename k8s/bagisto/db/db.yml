@@ -88,10 +88,11 @@ kind: Service
 metadata:
   name: mariadb
 spec:
-  type: NodePort
+  # ClusterIP: the database is cluster-internal only. Never expose MariaDB
+  # on a NodePort/LoadBalancer; reach it locally via `kubectl port-forward`.
+  type: ClusterIP
   selector:
     app: mariadb
   ports:
     - port: 3306
       targetPort: 3306
-      nodePort: 30306

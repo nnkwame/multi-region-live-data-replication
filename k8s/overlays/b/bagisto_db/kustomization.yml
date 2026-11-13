@@ -1,3 +1,4 @@
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -8,11 +9,5 @@ resources:
   - ../../../bagisto/secrets
   - ../ns
 
-patches:
-  - target:
-      kind: Service
-      name: mariadb
-    patch: |-
-      - op: add
-        path: /spec/ports/0/nodePort
-        value: 30307
+# No Service patch: the base mariadb Service is ClusterIP (cluster-internal
+# only); reach the database locally via `kubectl port-forward`.

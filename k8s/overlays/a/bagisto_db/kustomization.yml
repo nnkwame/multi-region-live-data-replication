@@ -31,10 +31,3 @@ patches:
           - name: mariadb-cdc-config
             configMap:
               name: mariadb-cdc-config
-  - target:
-      kind: Service
-      name: mariadb
-    patch: |-
-      - op: add
-        path: /spec/ports/0/nodePort
-        value: 30306
