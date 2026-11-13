@@ -96,8 +96,11 @@ module "eks" {
   }
   eks_managed_node_groups = {
     default = {
-      ami_type       = "AL2023_ARM_64_STANDARD"
-      instance_types = var.instance_types
+      ami_type = "AL2023_ARM_64_STANDARD"
+      # Diversified list: a single spot instance type can be unfulfillable
+      # (UnfulfillableCapacity hit on t4g.medium in eu-central-1); several
+      # types let the request be served from any available spot pool.
+      instance_types = var.spot_instance_types
       # NOTE: the attribute is `capacity_type` — an unknown key like
       # `instance_availability_type` is silently ignored and the group
       # falls back to ON_DEMAND.

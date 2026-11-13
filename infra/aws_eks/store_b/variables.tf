@@ -44,6 +44,12 @@ variable "instance_types" {
   default     = ["t4g.medium"]
 }
 
+variable "spot_instance_types" {
+  description = "Instance types for the SPOT node group (all matching the node-group AMI architecture). Several types let the spot request be fulfilled from any pool: a single type can be UnfulfillableCapacity (seen on t4g.medium in eu-central-1). Unused in data_replication while its spot group is at zero."
+  type        = list(string)
+  default     = ["t4g.medium", "t4g.large", "m6g.medium", "m6g.large"]
+}
+
 # variable "instance_availability_type" {
 #   # Obsolete: the correct node-group attribute is `capacity_type`
 #   # (see main.tf). Kept as a note so nobody reintroduces the silent

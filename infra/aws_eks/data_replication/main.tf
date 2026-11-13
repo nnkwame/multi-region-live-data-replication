@@ -96,8 +96,10 @@ module "eks" {
   }
   eks_managed_node_groups = {
     default = {
-      ami_type       = "AL2023_x86_64_STANDARD"
-      instance_types = var.instance_types
+      ami_type = "AL2023_x86_64_STANDARD"
+      # Diversified x86_64 list (this stack's AMI is x86): several types let
+      # the spot request be served from any available pool. Group is at zero.
+      instance_types = var.spot_instance_types
       # NOTE: the attribute is `capacity_type` — an unknown key like
       # `instance_availability_type` is silently ignored and the group
       # falls back to ON_DEMAND.

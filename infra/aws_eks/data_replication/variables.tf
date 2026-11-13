@@ -44,6 +44,12 @@ variable "instance_types" {
   default     = ["m6a.xlarge"]
 }
 
+variable "spot_instance_types" {
+  description = "Instance types for the SPOT node group (all matching the node-group AMI architecture; this stack is x86_64 because the replication image is untested on ARM). Several types let the spot request be fulfilled from any pool: a single type can be UnfulfillableCapacity (seen on t4g.medium in eu-central-1). The spot group is at zero in this stack; kept for consistency."
+  type        = list(string)
+  default     = ["m5.large", "m5.xlarge", "m6a.large", "m6a.xlarge"]
+}
+
 # variable "instance_availability_type" {
 #   # Obsolete: the correct node-group attribute is `capacity_type`
 #   # (see main.tf). Kept as a note so nobody reintroduces the silent
