@@ -16,6 +16,7 @@ spec:
   class: io.debezium.connector.jdbc.JdbcSinkConnector
   tasksMax: 1 #2
   config:
+    # First catch up orders alone, then expand to the captured child tables.
     topics.regex: "store-a\\.bagisto\\..*"
     collection.name.format: "${source.table}"
     connection.url: "jdbc:mariadb://mariadb.store-b.svc.cluster.local:3306/bagisto" # "jdbc:mariadb://192.168.1.50:3306/bagisto" # "jdbc:mariadb://db.example.com:3306/bagisto" # "jdbc:mariadb://mydb.abcdef.eu-central-1.rds.amazonaws.com:3306/bagisto"
@@ -27,5 +28,6 @@ spec:
     schema.evolution: "basic" # "validate-only"
     errors.tolerance: "all"
     errors.deadletterqueue.topic.name: "dlq-my-topic"
+    errors.deadletterqueue.topic.replication.factor: 1
     errors.deadletterqueue.context.headers.enable: "true"
     #use.time.zone: "UTC"

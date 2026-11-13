@@ -9,7 +9,28 @@ resources:
   - ../../../bagisto/secrets
   - ../ns
 
+configMapGenerator:
+  - name: mariadb-cdc-config
+    files:
+      - config/debezium.cnf
+
 patches:
+  - target:
+      kind: StatefulSet
+      name: mariadb
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/volumeMounts/-
+        value:
+          name: mariadb-cdc-config
+          mountPath: /etc/mysql/conf.d/debezium.cnf
+          subPath: debezium.cnf
+      - op: add
+        path: /spec/template/spec/volumes
+        value:
+          - name: mariadb-cdc-config
+            configMap:
+              name: mariadb-cdc-config
   - target:
       kind: Service
       name: mariadb

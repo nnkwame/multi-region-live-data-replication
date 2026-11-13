@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: data-replication
+resources:
+  - ../connect
+patches:
+  - target:
+      kind: KafkaConnect
+      name: my-connect-cluster
+    patch: |-
+      - op: remove
+        path: /spec/build
+      - op: add
+        path: /spec/image
+        value: capstone-connect:3.7.1-kafka-4.3.1

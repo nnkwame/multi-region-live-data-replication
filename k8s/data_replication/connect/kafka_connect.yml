@@ -8,13 +8,36 @@ metadata:
 #  # needing to call the Connect REST API directly
     strimzi.io/use-connector-resources: "true"
 spec:
-  version: 4.3.2
+  version: 4.3.1
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9093
   groupId: my-connect-group
   configStorageTopic: my-connect-configs
   statusStorageTopic: my-connect-status
   offsetStorageTopic: my-connect-offsets
+  metricsConfig:
+    type: jmxPrometheusExporter
+    valueFrom:
+      configMapKeyRef:
+        name: connect-metrics
+        key: metrics-config.yml
+  build:
+    output:
+      type: docker
+      # Cloud deployment must replace this placeholder and configure registry credentials.
+      # The Minikube overlay removes this build block and uses the locally loaded image.
+      image: example.invalid/capstone-connect:3.7.1-kafka-4.3.1
+    plugins:
+      - name: debezium-mariadb
+        artifacts:
+          - type: tgz
+            url: https://repo.maven.apache.org/maven2/io/debezium/debezium-connector-mariadb/3.7.1.Final/debezium-connector-mariadb-3.7.1.Final-plugin.tar.gz
+            sha512sum: eb01700b43216ad3edcc0401b88747d92fdfbe310f32ccbdc85a372c184e40390f00d7ed146235190527c9629de901f7da7613d180a5f8fb35d98b99eb23b2ce
+      - name: debezium-jdbc
+        artifacts:
+          - type: tgz
+            url: https://repo.maven.apache.org/maven2/io/debezium/debezium-connector-jdbc/3.7.1.Final/debezium-connector-jdbc-3.7.1.Final-plugin.tar.gz
+            sha512sum: c8520f33a2176a55db677a164c3b77353242a422937f7056e0d53a85a9f078328a9a2ce62c6f803c447ae2b978df2a2d0af02792b0e27f7f751222c1e62e63fb
   tls:
     trustedCertificates:
       - secretName: my-cluster-cluster-ca-cert
