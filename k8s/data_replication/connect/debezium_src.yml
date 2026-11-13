@@ -1,0 +1,40 @@
+# To use the KafkaConnector resource, you have to first enable the connector operator using
+# the strimzi.io/use-connector-resources annotation on the KafkaConnect custom resource.
+# From Apache Kafka 3.1.1 and 3.2.0, you also have to add the FileStreamSourceConnector
+# connector to the container image. You can do that using the kafka-connect-build.yaml example.
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    # The strimzi.io/cluster label identifies the KafkaConnect instance
+    # in which to create this connector. That KafkaConnect instance
+    # must have the strimzi.io/use-connector-resources annotation
+    # set to true.
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  class: io.debezium.connector.mariadb.MariaDbConnector
+  tasksMax: 1
+
+  config:
+    database.hostname: "mariadb.store-a.svc.cluster.local"
+    database.port: "3306"
+
+    database.user: "${env:STORE_A_DB_USER}"
+    database.password: "${env:STORE_A_DB_PASSWORD}"
+
+    database.server.id: "184054"
+
+    topic.prefix: "store-a"
+    database.include.list: "bagisto"
+
+    # Fixed-catalog demo: no new customer images, file options or return uploads.
+    # Cross-table foreign-key ordering and target apply behavior still require testing.
+    # customer_password_resets is omitted: it has no primary key for the configured JDBC sink.
+    table.include.list: "bagisto.customers,bagisto.customer_notes,bagisto.customer_social_accounts,bagisto.addresses,bagisto.orders,bagisto.order_items,bagisto.order_payment,bagisto.order_transactions,bagisto.order_comments,bagisto.product_inventories,bagisto.product_inventory_indices,bagisto.product_ordered_inventories,bagisto.cart,bagisto.cart_items,bagisto.cart_item_inventories,bagisto.cart_payment,bagisto.cart_shipping_rates,bagisto.invoices,bagisto.invoice_items,bagisto.shipments,bagisto.shipment_items,bagisto.refunds,bagisto.refund_items,bagisto.rma,bagisto.rma_items,bagisto.rma_messages"
+
+    schema.history.internal.kafka.bootstrap.servers: "my-cluster-kafka-bootstrap:9092"
+    schema.history.internal.kafka.topic: "schemahistory.store-a"
+
+    # Optional for now:
+    # include.schema.changes: "true"
