@@ -28,6 +28,9 @@ kubeconfig.*
 !*.example.tfvars.json
 !*.tfvars.example
 !*.tfvars.json.example
+# EKS stacks carry non-secret deployment parameters (region, sizing, CIDRs)
+# and must be reproducible from the repo.
+!infra/aws_eks/*/terraform.tfvars
 override.tf
 override.tf.json
 *_override.tf
