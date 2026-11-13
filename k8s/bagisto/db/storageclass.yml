@@ -1,0 +1,27 @@
+---
+# gp3 StorageClass via the EBS CSI driver (ebs.csi.aws.com).
+#
+# EKS 1.36 clusters do not ship a CSI-backed StorageClass by default; the only
+# pre-created class is gp2 from the legacy in-tree provisioner
+# (kubernetes.io/aws-ebs), whose volume creation EKS no longer performs —
+# PVCs referencing it hang in Pending. The aws-ebs-csi-driver addon is
+# installed (with its pod-identity role) by Terraform; it needs a CSI
+# StorageClass to provision against.
+#
+# gp3 is the current AWS-recommended general-purpose volume type (same price
+# as gp2, higher baseline throughput). Retain the WaitForFirstConsumer
+# binding mode: the EBS volume is then created in the zone of the node the
+# pod actually lands on.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  csi.storage.k8s.io/fstype: ext4
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true

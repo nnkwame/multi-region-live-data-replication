@@ -18,6 +18,8 @@ metadata:
   name: bagisto
   namespace: store-a
   annotations:
+    # First issuance validated on letsencrypt-staging (see implementation-log);
+    # the public demo uses the browser-trusted prod issuer.
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/proxy-body-size: 16m
     # http -> https for the public host
