@@ -31,7 +31,7 @@ esac
 command -v aws >/dev/null || die "aws CLI not found."
 aws sts get-caller-identity >/dev/null 2>&1 || die "AWS credentials not found or expired."
 
-ZONE_ID="$(aws route53 list-hosted-zones \
+ZONE_ID="$(aws route53 list-hosted-zones-by-name \
   --dns-name "${ZONE_NAME}" \
   --query "HostedZones[?Name=='${ZONE_NAME}.'].Id | [0]" \
   --output text 2>/dev/null | cut -d/ -f3)"
@@ -70,7 +70,7 @@ ARN="$(aws resourcegroupstaggingapi get-resources \
   --query 'ResourceTagMappingList[0].ResourceARN' --output text)"
 [[ -n "$ARN" && "$ARN" != "None" ]] || die "No load balancer found for cluster ${CLUSTER}. Is it up with the ingress controller installed?"
 
-LB_NAME="${ARN##*/}"
+LB_NAME="${ARN%/*}"; LB_NAME="${LB_NAME##*/}"
 read -r LB_DNS LB_ZONE < <(aws elbv2 describe-load-balancers --region "$REGION" --names "$LB_NAME" \
   --query 'LoadBalancers[0].[DNSName,CanonicalHostedZoneId]' --output text)
 
