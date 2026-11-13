@@ -14,6 +14,20 @@ spec:
         app: bagisto
     spec:
       initContainers:
+        - name: initialize-media
+          image: webkul/bagisto:2.4.13-nginx-mariadb
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              if [ -z "$(ls -A /media)" ]; then
+                cp -a /var/www/bagisto/storage/app/public/. /media/
+              fi
+              chown -R www-data:www-data /media
+          volumeMounts:
+            - name: media
+              mountPath: /media
         - name: composer-install
           image: webkul/bagisto:2.4.13-nginx-mariadb
 
@@ -45,12 +59,31 @@ spec:
       containers:
         - name: bagisto
           image: webkul/bagisto:2.4.13-nginx-mariadb
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - |
+              set -e
+              cd /var/www/bagisto
+              php artisan package:discover --no-ansi
+              exec /usr/local/bin/entrypoint.sh /bin/bash -c '
+                set -e
+                cd /var/www/bagisto
+                php artisan vendor:publish --tag=bagistoapi-views --tag=bagistoapi-assets --tag=bagistoapi-graphiql-assets --no-interaction --no-ansi
+                mkdir -p public/vendor storage/framework/cache/data storage/logs
+                if [ ! -e public/vendor/api-platform ]; then
+                  ln -s /var/www/bagisto/vendor/api-platform/laravel/public public/vendor/api-platform
+                fi
+                chown -R www-data:www-data storage/framework storage/logs bootstrap/cache
+                exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
+              '
           
           env:
             - name: DB_CONNECTION
               value: "mariadb"
-            #- name: DB_HOST
-            #  value: mariadb
+            - name: DB_HOST
+              value: mariadb
             - name: DB_PORT
               value: "3306" 
             #- name: APP_URL
@@ -78,7 +111,22 @@ spec:
 
           ports:
             - containerPort: 80
+          readinessProbe:
+            tcpSocket:
+              port: 80
+            periodSeconds: 5
           volumeMounts:
+            - name: api-config
+              mountPath: /var/www/bagisto/bootstrap/app.php
+              subPath: bootstrap-app.php
+            - name: api-config
+              mountPath: /var/www/bagisto/packages/Webkul/Core/src/Eloquent/TranslatableModel.php
+              subPath: TranslatableModel.php
+            - name: api-config
+              mountPath: /var/www/bagisto/config/api-platform.php
+              subPath: api-platform.php
+            - name: media
+              mountPath: /var/www/bagisto/storage/app/public
             - name: composer-files
               mountPath: /var/www/bagisto/composer.json
               subPath: composer.json
@@ -91,12 +139,29 @@ spec:
               mountPath: /var/www/bagisto/vendor
 
       volumes:
+        - name: api-config
+          configMap:
+            name: bagisto-api-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: bagisto-media
         - name: composer-files
           configMap:
             name: bagisto-composer
             defaultMode: 0755
         - name: vendor
           emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bagisto-media
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service

@@ -1,0 +1,12 @@
+{
+  "format_version": 1,
+  "bagisto_version": "2.4.13",
+  "api_version": "2.4.4",
+  "database": "MariaDB 10.11.19",
+  "app_key_sha256": "6933d037e8e3b7f3709b77b35e0651e83352ea9ac354621c9cd45f2157c4f4d8",
+  "source_database": "capstone_destination_100k",
+  "sha256": {
+    "bagisto.sql.gz": "04f5ffa7858e8024c536cd17c8438b0e5338b1dab8511fe6cf46a42d55114b20",
+    "media.tar.gz": "423029fcdd7c8a2ad4caef40a9304aad0e0675afa2d90e62db42159fd716da64"
+  }
+}

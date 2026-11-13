@@ -70,6 +70,7 @@ coverage/
 /artifacts/raw/
 /artifacts/runs/
 /artifacts/baselines/
+/artifacts/backups/
 /compose/data/
 /compose/volumes/
 *.log

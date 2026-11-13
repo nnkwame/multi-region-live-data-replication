@@ -11,6 +11,15 @@ resources:
 
 patches:
   - target:
+      kind: Deployment
+      name: bagisto
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: APP_URL
+          value: http://localhost:8081
+  - target:
       kind: Service
       name: bagisto
     patch: |-

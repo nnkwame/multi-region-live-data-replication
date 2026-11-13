@@ -8,5 +8,10 @@ resources:
 configMapGenerator:
   - name: bagisto-composer
     files:
-      - composer.json=./composer.json
-      - composer.lock=./composer.lock
+      - composer.json=./api/composer.json
+      - composer.lock=./api/composer.lock
+  - name: bagisto-api-config
+    files:
+      - bootstrap-app.php=./api/bootstrap-app.php
+      - TranslatableModel.php=./api/TranslatableModel.php
+      - api-platform.php=./api/api-platform.php
