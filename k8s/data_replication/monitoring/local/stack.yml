@@ -1,0 +1,152 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: capstone-prometheus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: capstone-prometheus
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/proxy", "pods", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: capstone-prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: capstone-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: capstone-prometheus
+    namespace: data-replication
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capstone-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: capstone-prometheus}
+  template:
+    metadata:
+      labels: {app: capstone-prometheus}
+    spec:
+      serviceAccountName: capstone-prometheus
+      securityContext:
+        fsGroup: 65534
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v3.5.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --storage.tsdb.retention.time=6h
+          ports:
+            - {name: http, containerPort: 9090}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 384Mi}
+          readinessProbe:
+            httpGet: {path: /-/ready, port: http}
+            periodSeconds: 5
+          volumeMounts:
+            - {name: config, mountPath: /etc/prometheus}
+            - {name: data, mountPath: /prometheus}
+      volumes:
+        - name: config
+          configMap: {name: capstone-prometheus-config}
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: capstone-prometheus
+spec:
+  selector: {app: capstone-prometheus}
+  ports:
+    - {name: http, port: 9090, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: capstone-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: capstone-grafana}
+  template:
+    metadata:
+      labels: {app: capstone-grafana}
+    spec:
+      securityContext:
+        fsGroup: 472
+      containers:
+        - name: grafana
+          image: grafana/grafana:12.2.0
+          env:
+            - {name: GF_SECURITY_ADMIN_PASSWORD, value: admin123}
+            - {name: GF_AUTH_ANONYMOUS_ENABLED, value: "true"}
+            - {name: GF_AUTH_ANONYMOUS_ORG_ROLE, value: Viewer}
+          ports:
+            - {name: http, containerPort: 3000}
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {memory: 300Mi}
+          readinessProbe:
+            httpGet: {path: /api/health, port: http}
+            periodSeconds: 5
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/grafana}
+            - {name: provisioning, mountPath: /etc/grafana/provisioning/datasources/datasource.yml, subPath: datasource.yml}
+            - {name: provisioning, mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml, subPath: dashboards.yml}
+            - {name: dashboards, mountPath: /etc/grafana/dashboards}
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: provisioning
+          configMap: {name: capstone-grafana-provisioning}
+        - name: dashboards
+          configMap: {name: capstone-strimzi-dashboards}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: capstone-grafana
+spec:
+  type: NodePort
+  selector: {app: capstone-grafana}
+  ports:
+    - {name: http, port: 3000, targetPort: http, nodePort: 30300}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: capstone-node-exporter
+spec:
+  selector:
+    matchLabels: {app: capstone-node-exporter}
+  template:
+    metadata:
+      labels: {app: capstone-node-exporter}
+    spec:
+      containers:
+        - name: node-exporter
+          image: prom/node-exporter:v1.9.1
+          args: ["--path.rootfs=/host"]
+          ports:
+            - {name: metrics, containerPort: 9100}
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          volumeMounts:
+            - {name: host-root, mountPath: /host, readOnly: true, mountPropagation: HostToContainer}
+      volumes:
+        - name: host-root
+          hostPath: {path: /}

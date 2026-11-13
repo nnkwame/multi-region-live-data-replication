@@ -1,0 +1,61 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+rule_files:
+  - /etc/prometheus/alerts.yml
+scrape_configs:
+  - job_name: strimzi-pods
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [data-replication]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_strimzi_io_kind]
+        regex: Kafka|KafkaConnect
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_container_port_name]
+        regex: tcp-prometheus
+        action: keep
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(strimzi_io_.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: kubernetes_pod_name
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: node_name
+      - source_labels: [__meta_kubernetes_pod_host_ip]
+        target_label: node_ip
+  - job_name: kubernetes-cadvisor
+    scheme: https
+    kubernetes_sd_configs:
+      - role: node
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    relabel_configs:
+      - target_label: __address__
+        replacement: kubernetes.default.svc:443
+      - source_labels: [__meta_kubernetes_node_name]
+        target_label: __metrics_path__
+        replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+      - source_labels: [__meta_kubernetes_node_name]
+        target_label: node_name
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'container_cpu_usage_seconds_total|container_memory_usage_bytes'
+        action: keep
+  - job_name: node-exporter
+    kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names: [data-replication]
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: capstone-node-exporter
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_container_port_name]
+        regex: metrics
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_node_name]
+        target_label: node_name
