@@ -19,6 +19,8 @@ patches:
         path: /spec/template/spec/containers/0/env/-
         value:
           name: APP_URL
-          value: http://kwames-store-a.ironlabs.online
+          # Public entry is TLS-terminated at the ingress; Bagisto generates
+          # absolute URLs from this. Both stores serve the same demo hostname.
+          value: https://kwamesdemostore.ironlabs.online
   # Cloud: the base Service is ClusterIP; the nginx ingress controller fronts
   # the app (see ingress.yml in this overlay).

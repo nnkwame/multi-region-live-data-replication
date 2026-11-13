@@ -77,11 +77,9 @@ fi
 VPC_ID="$(terraform output -raw vpc_id 2>/dev/null || true)"
 
 log "Destroying the EKS cluster..."
-# If a DNS record exists in this state, destroy with enable_domain_record=true so
-# Terraform knows about every resource it is about to remove.
-if [[ "$(terraform state list 2>/dev/null | grep -c '^aws_route53_record\.')" -gt 0 ]]; then
-  TF_VARS+=(-var "enable_domain_record=true")
-fi
+# No Terraform-managed DNS records in this stack; the kwamesdemostore alias is
+# managed by demo_dns/cutover.sh (run \`cutover.sh delete\` before tearing down
+# the LAST live store so the alias does not dangle at a removed NLB).
 terraform destroy -input=false -auto-approve "${TF_VARS[@]}"
 
 # GuardDuty Runtime Monitoring (when "automated agent configuration" is on)

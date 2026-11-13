@@ -28,17 +28,12 @@ output "connect_command" {
   value       = "aws eks update-kubeconfig --name ${module.eks.cluster_name} --region ${var.region} --alias ${module.eks.cluster_name}"
 }
 
-output "app_domain" {
-  description = "Domain registered for this stack's app once dns.sh has run."
-  value       = "${var.project_name}.${var.dns_zone_name}"
+output "cert_manager_irsa_role_arn" {
+  description = "IRSA role cert-manager assumes for Route53 DNS-01 challenges. up.sh annotates the ServiceAccount with it."
+  value       = module.cert_manager_irsa.iam_role_arn
 }
 
-output "ingress_lb_dns_name" {
-  description = "DNS name of the NLB in front of the nginx ingress controller. Empty until dns.sh sets enable_domain_record."
-  value       = try(data.aws_lb.ingress[0].dns_name, "")
-}
-
-output "ingress_lb_zone_id" {
-  description = "Route53 zone of the ingress NLB. Empty until dns.sh sets enable_domain_record."
-  value       = try(data.aws_lb.ingress[0].zone_id, "")
+output "dns_zone_id" {
+  description = "Route53 zone (ironlabs.online) hosting the kwamesdemostore alias managed by demo_dns/cutover.sh."
+  value       = data.aws_route53_zone.ironlabs.zone_id
 }

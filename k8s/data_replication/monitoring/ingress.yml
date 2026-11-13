@@ -2,13 +2,24 @@
 # Exposes Grafana at kwames-data-replication.ironlabs.online through the nginx
 # ingress controller installed by infra/aws_eks/data_replication/up.sh.
 # The Route53 alias is created by infra/aws_eks/data_replication/dns.sh.
+#
+# TLS terminates at nginx (the NLB is TCP passthrough on 443); cert-manager
+# issues the certificate from letsencrypt-prod via DNS-01 (Route53, IRSA role
+# from irsa.tf).
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana
   namespace: data-replication
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - kwames-data-replication.ironlabs.online
+      secretName: kwames-data-replication-tls
   rules:
     - host: kwames-data-replication.ironlabs.online
       http:

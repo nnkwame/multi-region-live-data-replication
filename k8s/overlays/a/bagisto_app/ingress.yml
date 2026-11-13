@@ -1,29 +1,34 @@
 ---
 # Cloud Ingress for store A. Served by the nginx ingress controller
 # (k8s/nginx-ingress/deploy.yaml, installed by infra/aws_eks/store_a/up.sh).
-# The kwamesdemostore host is also routed here so the demo-URL cutover
-# (infra/aws_eks/demo_dns/cutover.sh) can point the Route53 alias at either
-# store's NLB.
+#
+# The store is intentionally reachable ONLY through the demo URL: both store
+# clusters serve the same hostname, and infra/aws_eks/demo_dns/cutover.sh
+# points the Route53 alias kwamesdemostore.ironlabs.online at whichever store
+# is active (a blue/green cutover lever).
+#
+# TLS terminates at nginx (the NLB is TCP passthrough on 443 — the vendored
+# controller Service already maps 443 -> https). cert-manager issues the
+# certificate from letsencrypt-prod via DNS-01 (Route53, IRSA role from
+# irsa.tf). DNS-01 (not HTTP-01) is what lets the STANDBY store obtain a
+# certificate while DNS points at the active store, so cutover is DNS-only.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: bagisto
   namespace: store-a
   annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/proxy-body-size: 16m
+    # http -> https for the public host
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - kwamesdemostore.ironlabs.online
+      secretName: kwamesdemostore-tls
   rules:
-    - host: kwames-store-a.ironlabs.online
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: bagisto
-                port:
-                  number: 80
     - host: kwamesdemostore.ironlabs.online
       http:
         paths:

@@ -60,6 +60,9 @@ module "eks" {
   name               = local.cluster_name
   kubernetes_version = var.kubernetes_version
 
+  # OIDC provider for IRSA roles (cert-manager's Route53 DNS-01 role, irsa.tf).
+  enable_irsa = true
+
   endpoint_public_access                   = true
   endpoint_public_access_cidrs             = var.endpoint_public_access_cidrs
   enable_cluster_creator_admin_permissions = true # whoever runs `terraform apply` gets kubectl admin

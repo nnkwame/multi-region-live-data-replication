@@ -42,3 +42,7 @@ output "ingress_lb_zone_id" {
   description = "Route53 zone of the ingress NLB. Empty until dns.sh sets enable_domain_record."
   value       = try(data.aws_lb.ingress[0].zone_id, "")
 }
+output "cert_manager_irsa_role_arn" {
+  description = "IRSA role cert-manager assumes for Route53 DNS-01 challenges. up.sh annotates the ServiceAccount with it."
+  value       = module.cert_manager_irsa.iam_role_arn
+}
