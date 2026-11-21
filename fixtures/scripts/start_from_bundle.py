@@ -26,7 +26,8 @@ def main():
     p.add_argument('--bundle',type=Path,required=True); p.add_argument('--replace-existing',action='store_true')
     p.add_argument('--writers-paused',action='store_true')
     a=p.parse_args()
-    if a.context!='minikube': p.error('this local runner only permits context minikube')
+    allowed=('minikube','eks-kwames-store-a','eks-kwames-store-b')
+    if a.context not in allowed: p.error('this runner only permits contexts: '+', '.join(allowed))
     if not a.replace_existing or not a.writers_paused: p.error('pass --replace-existing and --writers-paused after stopping all writers')
     if (a.bundle/'INCOMPLETE').exists(): raise RuntimeError('incomplete bundle')
     m=json.loads((a.bundle/'manifest.json').read_text())
@@ -39,14 +40,14 @@ def main():
             if path.is_absolute() or '..' in path.parts or not path.parts or path.parts[0]!='public' or not(member.isfile() or member.isdir()): raise RuntimeError('unsafe media member '+member.name)
     ns='store-'+a.store; k=['kubectl','--context='+a.context,'-n',ns]; helper='capstone-bundle-restore'
     def run(args,**kwargs): return subprocess.run(args,check=True,**kwargs)
-    run(['kubectl','--context='+a.context,'apply','--server-side','-k',str(ROOT/'k8s/overlays'/a.store/'bagisto_db')])
+    run(['kubectl','--context='+a.context,'apply','--server-side','--force-conflicts','-k',str(ROOT/'k8s/overlays'/a.store/'bagisto_db')])
     run(k+['rollout','status','statefulset/mariadb','--timeout=180s'])
     key=run(k+['get','secret','app-secret','-o','jsonpath={.data.appkey}'],capture_output=True).stdout
     if hashlib.sha256(base64.b64decode(key)).hexdigest()!=m['app_key_sha256']: raise RuntimeError('APP_KEY mismatch')
     dbname=base64.b64decode(run(k+['get','secret','app-secret','-o','jsonpath={.data.database}'],capture_output=True).stdout).decode()
     if dbname!='bagisto': raise RuntimeError('expected database bagisto; refusing replacement')
     # Applying the app overlay creates the media PVC if this is a fresh deployment.
-    run(['kubectl','--context='+a.context,'apply','--server-side','-k',str(ROOT/'k8s/overlays'/a.store/'bagisto_app')])
+    run(['kubectl','--context='+a.context,'apply','--server-side','--force-conflicts','-k',str(ROOT/'k8s/overlays'/a.store/'bagisto_app')])
     if subprocess.run(k+['get','pod',helper],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0: raise RuntimeError('restore helper already exists; inspect before proceeding')
     run(k+['delete','deployment','bagisto','--ignore-not-found=true','--wait=true'])
     if run(k+['get','pods','-l','app=bagisto','-o','name'],capture_output=True,text=True).stdout.strip():
@@ -77,7 +78,7 @@ def main():
         run(k+['exec','-i',helper,'--','tar','-C','/work/public','--strip-components=1','-xzf','-'],stdin=f)
     run(k+['exec',helper,'--','chown','-R','www-data:www-data','/work/public'])
     run(k+['delete','pod',helper,'--wait=true'])
-    run(['kubectl','--context='+a.context,'apply','--server-side','-k',str(ROOT/'k8s/overlays'/a.store/'bagisto_app')])
+    run(['kubectl','--context='+a.context,'apply','--server-side','--force-conflicts','-k',str(ROOT/'k8s/overlays'/a.store/'bagisto_app')])
     run(k+['rollout','status','deployment/bagisto','--timeout=300s'])
     print('Store',a.store,'restored; verify before routing traffic.')
 

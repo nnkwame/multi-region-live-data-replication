@@ -8,6 +8,7 @@ resources:
   - ../../../bagisto/db
   - ../../../bagisto/secrets
   - ../ns
+  - mariadb-nlb.yml
 
 # No Service patch: the base mariadb Service is ClusterIP (cluster-internal
 # only); reach the database locally via `kubectl port-forward`.

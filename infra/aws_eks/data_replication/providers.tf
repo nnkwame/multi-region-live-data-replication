@@ -26,3 +26,11 @@ provider "aws" {
   # stays in us-east-1; backend and provider regions are independent.
   region = var.region
 }
+
+# Aliased provider for the cross-region VPC peering with store B (Frankfurt):
+# the data-replication cluster (us-east-1) needs to program routes and accept
+# the peering in eu-central-1.
+provider "aws" {
+  alias  = "frankfurt"
+  region = "eu-central-1"
+}

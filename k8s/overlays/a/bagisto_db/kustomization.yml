@@ -8,6 +8,7 @@ resources:
   - ../../../bagisto/db
   - ../../../bagisto/secrets
   - ../ns
+  - mariadb-nlb.yml
 
 configMapGenerator:
   - name: mariadb-cdc-config

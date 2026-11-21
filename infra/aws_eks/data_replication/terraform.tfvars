@@ -25,3 +25,4 @@ instance_types = ["m6a.xlarge"]
 # starts at zero (min_nodes=0 keeps the node_counts check satisfied).
 min_nodes               = 0
 desired_stateless_nodes = 0
+desired_stateful_nodes  = 3

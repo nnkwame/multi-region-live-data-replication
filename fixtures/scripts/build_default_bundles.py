@@ -17,7 +17,7 @@ def main():
     p.add_argument('--large-customers',type=int,default=100000); p.add_argument('--large-orders',type=int,default=1000000)
     a=p.parse_args()
     if a.context!='minikube': p.error('only minikube is supported by this local workflow')
-    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,35}',a.db_prefix): p.error('db-prefix must be a short SQL identifier')
+    if not re.fullmatch(r'capstone_[A-Za-z0-9_]{1,27}',a.db_prefix): p.error('db-prefix must start with capstone_ and be at most 36 characters')
     if min(a.small_customers,a.small_orders,a.large_customers,a.large_orders)<0 or (a.small_orders and not a.small_customers) or (a.large_orders and not a.large_customers): p.error('invalid dataset sizes')
     if not a.baseline_sql.is_file() or not a.baseline_media.is_file(): p.error('baseline database and matching media must exist')
     if a.output.exists(): p.error('output must be a new directory')
@@ -38,9 +38,11 @@ def main():
     def call(script,args): subprocess.run([sys.executable,str(HERE/script),*args],check=True)
     for kind,customers,orders in [('a_small',a.small_customers,a.small_orders),('a_large',a.large_customers,a.large_orders),('b_empty',0,0),('b_small',0,0),('b_large',0,0)]:
         call('seed_default.py',common+['--database',names[kind],'--customers',str(customers),'--orders',str(orders),'--apply'])
+    for kind in ('a_small','a_large'):
+        call('invoice_default.py',common+['--database',names[kind],'--percent','35','--apply'])
     for dest,src in [('b_small','a_small'),('b_large','a_large')]:
         call('copy_customers.py',common+['--source',names[src],'--destination',names[dest],'--apply'])
     for kind,db in names.items():
-        call('package_default.py',common+['--database',db,'--media',str(a.baseline_media),'--output',str(a.output/kind),'--writes-paused','--compress'])
+        call('package_default.py',common+['--database',db,'--media',str(a.baseline_media),'--output',str(a.output/kind),'--writes-paused','--compress','--pod-compress'])
     print('Bundles ready in',a.output)
 if __name__=='__main__': main()

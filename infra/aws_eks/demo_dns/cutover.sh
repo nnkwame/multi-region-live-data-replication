@@ -63,16 +63,20 @@ PY
 fi
 
 log "Looking up ${CLUSTER}'s ingress NLB (region ${REGION})..."
-ARN="$(aws resourcegroupstaggingapi get-resources \
+mapfile -t ARNS < <(aws resourcegroupstaggingapi get-resources \
   --region "$REGION" \
   --resource-type-filters elasticloadbalancing:loadbalancer \
   --tag-filters "Key=kubernetes.io/cluster/${CLUSTER},Values=owned" \
-  --query 'ResourceTagMappingList[0].ResourceARN' --output text)"
-[[ -n "$ARN" && "$ARN" != "None" ]] || die "No load balancer found for cluster ${CLUSTER}. Is it up with the ingress controller installed?"
+                "Key=kubernetes.io/service-name,Values=ingress-nginx/ingress-nginx-controller" \
+  --query 'ResourceTagMappingList[].ResourceARN' --output text | tr '\t' '\n')
+[[ ${#ARNS[@]} -eq 1 && -n "${ARNS[0]}" && "${ARNS[0]}" != "None" ]] || die "Expected exactly one ingress controller load balancer for ${CLUSTER}."
+ARN="${ARNS[0]}"
 
 LB_NAME="${ARN%/*}"; LB_NAME="${LB_NAME##*/}"
-read -r LB_DNS LB_ZONE < <(aws elbv2 describe-load-balancers --region "$REGION" --names "$LB_NAME" \
-  --query 'LoadBalancers[0].[DNSName,CanonicalHostedZoneId]' --output text)
+read -r LB_DNS LB_ZONE LB_SCHEME LB_STATE < <(aws elbv2 describe-load-balancers --region "$REGION" --names "$LB_NAME" \
+  --query 'LoadBalancers[0].[DNSName,CanonicalHostedZoneId,Scheme,State.Code]' --output text)
+[[ -n "$LB_DNS" && -n "$LB_ZONE" && "$LB_SCHEME" == "internet-facing" && "$LB_STATE" == "active" ]] \
+  || die "Ingress load balancer must be active and internet-facing; DNS was not changed."
 
 log "Pointing ${DEMO_NAME} -> ${LB_DNS} (${CLUSTER})..."
 python3 - "$DEMO_NAME" "$LB_DNS" "$LB_ZONE" <<'PY' | change_batch
